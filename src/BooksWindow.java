@@ -2,6 +2,8 @@ import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.sql.*;
 import java.util.Objects;
 import java.util.Vector;
@@ -10,8 +12,7 @@ public class BooksWindow {
     private JTextField textTitle;
     private JTextField textPublishedAt;
     private JTextField textQuantity;
-    private JTextField textAvailable;
-    private JTextField textAuthorId;
+    private JTextField textAuthor;
     private JButton searchButton;
     private JComboBox textId;
     private JButton addButton;
@@ -22,7 +23,9 @@ public class BooksWindow {
     private JPanel buttonsPanel;
     private JTable booksTable;
     private JPanel tablePanel;
-    private JButton openAuthorsWindowButton;
+    private JButton borrowButton;
+    private JButton addReaderButton;
+    private JButton backToMenuButton;
 
     Connection connection;
     PreparedStatement preparedStatment;
@@ -46,10 +49,9 @@ public class BooksWindow {
 
                         if (result.next()) {
                             textTitle.setText(result.getString(2));
-                            textPublishedAt.setText(result.getString(3));
-                            textQuantity.setText(result.getString(4));
-                            textAvailable.setText(result.getString(5));
-                            textAuthorId.setText(result.getString(6));
+                            textAuthor.setText(result.getString(3));
+                            textPublishedAt.setText(result.getString(4));
+                            textQuantity.setText(result.getString(5));
                         } else {
                             JOptionPane.showMessageDialog(null, "No record found!");
                         }
@@ -60,6 +62,44 @@ public class BooksWindow {
                 }
         });
 
+        // ADD BOOK
+        addButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                String title = textTitle.getText();
+                String author = textAuthor.getText();
+                String publishedAt = textPublishedAt.getText();
+                String quantity = textQuantity.getText();
+
+                try {
+                    preparedStatment = connection.prepareStatement("INSERT INTO books (title, author, publishedAt, quantity) VALUES (?,?,?,?)");
+                    preparedStatment.setString(1, title);
+                    preparedStatment.setString(2, author);
+                    preparedStatment.setString(3, publishedAt);
+                    preparedStatment.setString(4, quantity);
+
+                    int state = preparedStatment.executeUpdate();
+
+                    if (state == 1) {
+                        JOptionPane.showMessageDialog(null, "Record has been successfully add!");
+                        textTitle.setText("");
+                        textPublishedAt.setText("");
+                        textQuantity.setText("");
+                        textAuthor.setText("");
+                        textTitle.requestFocus();
+                        loadData();
+                        loadProductsId();
+                    }else{
+                        JOptionPane.showMessageDialog(null, "Cannot add record!");
+                    }
+
+                } catch (SQLException ex) {
+                    throw new RuntimeException(ex);
+                }
+            }
+        });
+
+        // UPDATE BOOK
         updateButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -67,17 +107,15 @@ public class BooksWindow {
                 String title = textTitle.getText();
                 String publishedAt = textPublishedAt.getText();
                 String quantity = textQuantity.getText();
-                String available = textAvailable.getText();
-                String authorId = textAuthorId.getText();
+                String author = textAuthor.getText();
 
                 try {
-                    preparedStatment = connection.prepareStatement("UPDATE books SET title=?,publishedAt=?,quantity=?,available=?,authorId=? WHERE id=?");
+                    preparedStatment = connection.prepareStatement("UPDATE books SET title=?,author=?,publishedAt=?,quantity=? WHERE id=?");
                     preparedStatment.setString(1, title);
-                    preparedStatment.setString(2, publishedAt);
-                    preparedStatment.setString(3, quantity);
-                    preparedStatment.setString(4, available);
-                    preparedStatment.setString(5, authorId);
-                    preparedStatment.setString(6, id);
+                    preparedStatment.setString(2, author);
+                    preparedStatment.setString(3, publishedAt);
+                    preparedStatment.setString(4, quantity);
+                    preparedStatment.setString(5, id);
 
                     int state = preparedStatment.executeUpdate();
 
@@ -86,8 +124,7 @@ public class BooksWindow {
                         textTitle.setText("");
                         textPublishedAt.setText("");
                         textQuantity.setText("");
-                        textAvailable.setText("");
-                        textAuthorId.setText("");
+                        textAuthor.setText("");
                         textTitle.requestFocus();
                         loadData();
                         loadProductsId();
@@ -107,17 +144,16 @@ public class BooksWindow {
             public void actionPerformed(ActionEvent e) {
                 String bookId = Objects.requireNonNull(textId.getSelectedItem()).toString();
                 try {
-                    preparedStatment = connection.prepareStatement("DELETE FROM books WHERE id = ?");
+                    preparedStatment = connection.prepareStatement("DELETE FROM books WHERE id=?");
                     preparedStatment.setString(1, bookId);
 
                     int state = preparedStatment.executeUpdate();
                     if (state == 1) {
                         JOptionPane.showMessageDialog(null, "Record has been successfully removed!");
                         textTitle.setText("");
-                        textAuthorId.setText("");
+                        textAuthor.setText("");
                         textPublishedAt.setText("");
                         textQuantity.setText("");
-                        textAvailable.setText("");
 
                         loadData();
                         loadProductsId();
@@ -125,8 +161,63 @@ public class BooksWindow {
                         JOptionPane.showMessageDialog(null, "Record failed to be removed!");
                     }
                 } catch (SQLException ex) {
+                    JOptionPane.showMessageDialog(null, "Cannot delete book if borrowers this book still exist!");
                     throw new RuntimeException(ex);
                 }
+            }
+        });
+
+        // EXPORT BOOKS DATA TO EXCEL
+        exportToCSVButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                String filename = "C:/Users/kacpe/IdeaProjects/Library/data_exported.csv";
+                try {
+                    FileWriter fw = new FileWriter(filename);
+                    preparedStatment = connection.prepareStatement("SELECT * FROM books");
+                    result = preparedStatment.executeQuery();
+
+                    while(result.next()){
+                        String id = result.getString(1);
+                        String name = result.getString(2);
+                        String price = result.getString(3);
+                        String quantity = result.getString(4);
+
+                        fw.append(id).append(";").append(name).append(";").append(price).append(";").append(quantity).append("\n");
+
+                    }
+                    JOptionPane.showMessageDialog(null, "CSV File is exported successfully!");
+                    fw.flush();
+                    fw.close();
+                } catch (IOException | SQLException ex) {
+                    throw new RuntimeException(ex);
+                }
+            }
+        });
+
+        // BORROW A BOOK
+        borrowButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+
+            }
+        });
+
+        // OPEN READER WINDOW
+        addReaderButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                ReaderWindow window = new ReaderWindow();
+                window.showWindow();
+            }
+        });
+
+        // BACK TO MENU
+        backToMenuButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                MenuWindow window = new MenuWindow();
+                window.showWindow();
             }
         });
     }
@@ -136,10 +227,11 @@ public class BooksWindow {
         DefaultTableModel model = new DefaultTableModel();
         model.addColumn("id");
         model.addColumn("title");
+        model.addColumn("author");
         model.addColumn("publishedAt");
         model.addColumn("quantity");
+        model.addColumn("borrowed");
         model.addColumn("available");
-        model.addColumn("authorId");
         booksTable.setModel(model);
     }
 
@@ -171,20 +263,20 @@ public class BooksWindow {
     public void loadData(){
         try{
             int quantity;
-            preparedStatment = connection.prepareStatement("SELECT books.id as id, title, publishedAt, quantity, available, authors.name as authorName FROM books JOIN authors ON books.authorId = authors.id");
+            preparedStatment = connection.prepareStatement("SELECT books.id, title, author, publishedAt, quantity, COUNT(rentals.bookId) AS borrowed, IF(COUNT(rentals.bookId) < quantity, 'true', 'false') AS available FROM books LEFT JOIN rentals ON books.id = rentals.bookId GROUP BY books.id, title, author, publishedAt, quantity");
             result = preparedStatment.executeQuery();
             ResultSetMetaData resultSetData = result.getMetaData();
             quantity = resultSetData.getColumnCount();
-            String[] columnNames = {"id", "title", "publishedAt", "quantity", "available", "authorId"};
             DefaultTableModel tableModel = (DefaultTableModel) booksTable.getModel();
             tableModel.setRowCount(0);
             while(result.next()){
                 Vector<String> v2 = new Vector<>();
                 v2.add(result.getString("id"));
                 v2.add(result.getString("title"));
-                v2.add(result.getString("authorName"));
+                v2.add(result.getString("author"));
                 v2.add(result.getString("publishedAt"));
                 v2.add(result.getString("quantity"));
+                v2.add(result.getString("borrowed"));
                 v2.add(result.getString("available"));
                 tableModel.addRow(v2);
             }
