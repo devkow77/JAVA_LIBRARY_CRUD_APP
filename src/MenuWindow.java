@@ -6,6 +6,8 @@ public class MenuWindow {
     private JPanel mainPanel;
     private JLabel header;
     private JLabel description;
+    private JButton borrowBookButton;
+    private JButton rentalsButton;
     private JButton booksButton;
     private JButton readersButton;
     private JButton exitButton;
@@ -24,8 +26,8 @@ public class MenuWindow {
         booksButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                BooksWindow window = new BooksWindow();
-                window.showWindow();
+                    BooksWindow window = new BooksWindow();
+                    window.showWindow();
             }
         });
 
@@ -33,8 +35,34 @@ public class MenuWindow {
         readersButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                ReaderWindow window = new ReaderWindow();
+//                ReaderWindow window = new ReaderWindow();
+//                window.showWindow();
+            }
+        });
+
+        // OPEN BORROW BOOK
+        borrowBookButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                BorrowBookWindow window = new BorrowBookWindow();
                 window.showWindow();
+            }
+        });
+
+        // OPEN RENTALS MANAGER
+        rentalsButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                RentalsWindow window = new RentalsWindow();
+                window.showWindow();
+            }
+        });
+
+        // EXIT APP
+        exitButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                System.exit(0);
             }
         });
     }

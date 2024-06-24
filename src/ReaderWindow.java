@@ -26,7 +26,11 @@ public class ReaderWindow {
     private JPanel buttonsPanel;
     private JPanel mainPanel;
     private JButton backToMenuButton;
-    private JButton bookManagerButton;
+    private JButton openBooksManagerButton;
+    private JTable borrowedBooksTable;
+    private JButton openBorrowBookButton;
+    private JButton openRentalsManagerButton;
+    private JPanel borrowedBooksPanel;
 
     Connection connection;
     PreparedStatement preparedStatment;
@@ -35,8 +39,9 @@ public class ReaderWindow {
     public ReaderWindow(){
         initializeTable();
         Connect();
-        loadProductsId();
-        loadData();
+        loadReadersId();
+        loadReadersData();
+        loadBorrowedBooksData();
 
         // SEARCH READER BY ID
         searchButton.addActionListener(new ActionListener() {
@@ -55,6 +60,7 @@ public class ReaderWindow {
                         textStreet.setText(result.getString(5));
                         textZipCode.setText(result.getString(6));
                         textCity.setText(result.getString(7));
+                        loadBorrowedBooksData();
                     } else {
                         JOptionPane.showMessageDialog(null, "No record found!");
                     }
@@ -97,8 +103,8 @@ public class ReaderWindow {
                         textCity.setText("");
                         textStreet.setText("");
                         textName.requestFocus();
-                        loadData();
-                        loadProductsId();
+                        loadReadersData();
+                        loadReadersId();
                     }else{
                         JOptionPane.showMessageDialog(null, "Cannot add record!");
                     }
@@ -141,8 +147,8 @@ public class ReaderWindow {
                         textZipCode.setText("");
                         textCity.setText("");
                         textName.requestFocus();
-                        loadData();
-                        loadProductsId();
+                        loadReadersData();
+                        loadReadersId();
                     }else{
                         JOptionPane.showMessageDialog(null, "Cannot update record!");
                     }
@@ -171,8 +177,8 @@ public class ReaderWindow {
                         textStreet.setText("");
                         textZipCode.setText("");
                         textCity.setText("");
-                        loadData();
-                        loadProductsId();
+                        loadReadersData();
+                        loadReadersId();
                     } else {
                         JOptionPane.showMessageDialog(null, "Record failed to be removed!");
                     }
@@ -212,10 +218,55 @@ public class ReaderWindow {
                 }
             }
         });
+
         backToMenuButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
+                MenuWindow window = new MenuWindow();
+                window.showWindow();
+            }
+        });
 
+        // OPEN BOOKS MANAGER
+        openBooksManagerButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                BooksWindow window = new BooksWindow();
+                window.showWindow();
+            }
+        });
+
+        // OPEN READERS MANAGER
+        openBorrowBookButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+
+            }
+        });
+
+        // OPEN RENTALS MANAGER
+        openRentalsManagerButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                RentalsWindow window = new RentalsWindow();
+                window.showWindow();
+            }
+        });
+
+        // OPEN MENU
+        backToMenuButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                MenuWindow window = new MenuWindow();
+                window.showWindow();
+            }
+        });
+
+        openBorrowBookButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                BorrowBookWindow window = new BorrowBookWindow();
+                window.showWindow();
             }
         });
     }
@@ -223,19 +274,31 @@ public class ReaderWindow {
 
     // INITIALIZE TABLE
     private void initializeTable() {
-        DefaultTableModel model = new DefaultTableModel();
-        model.addColumn("id");
-        model.addColumn("name");
-        model.addColumn("surname");
-        model.addColumn("pesel");
-        model.addColumn("street");
-        model.addColumn("zipCode");
-        model.addColumn("city");
-        model.addColumn("rentals");
-        readersTable.setModel(model);
+        DefaultTableModel readersModel = new DefaultTableModel();
+        DefaultTableModel borrowedBooksModel = new DefaultTableModel();
+
+        readersModel.addColumn("id");
+        readersModel.addColumn("name");
+        readersModel.addColumn("surname");
+        readersModel.addColumn("pesel");
+        readersModel.addColumn("street");
+        readersModel.addColumn("zipCode");
+        readersModel.addColumn("city");
+        readersModel.addColumn("rentals");
+
+        borrowedBooksModel.addColumn("id");
+        borrowedBooksModel.addColumn("title");
+        borrowedBooksModel.addColumn("author");
+        borrowedBooksModel.addColumn("surname");
+        borrowedBooksModel.addColumn("pesel");
+        borrowedBooksModel.addColumn("deadline");
+        borrowedBooksModel.addColumn("penalty");
+
+        readersTable.setModel(readersModel);
+        borrowedBooksTable.setModel(borrowedBooksModel);
     }
 
-     //CONNECT WITH DATABASE
+    //CONNECT WITH DATABASE
     public void Connect() {
         try {
             Class.forName("com.mysql.cj.jdbc.Driver");
@@ -245,8 +308,8 @@ public class ReaderWindow {
         }
     }
 
-     //LOAD BOOKS ID TO COMBOBOX
-    public void loadProductsId(){
+    //LOAD BOOKS ID TO COMBOBOX
+    public void loadReadersId(){
         try {
             preparedStatment = connection.prepareStatement("SELECT id FROM readers");
             result = preparedStatment.executeQuery();
@@ -260,13 +323,10 @@ public class ReaderWindow {
     }
 
     // FETCH ALL DATA FROM READERS
-    public void loadData(){
+    public void loadReadersData(){
         try{
-            int quantity;
             preparedStatment = connection.prepareStatement("SELECT readers.id, name, surname, pesel, street, zipCode, city, COUNT(rentals.readerId) AS rentals FROM readers LEFT JOIN rentals ON readers.id = rentals.readerId GROUP BY readers.id, name, surname, zipCode, city;");
             result = preparedStatment.executeQuery();
-            ResultSetMetaData resultSetData = result.getMetaData();
-            quantity = resultSetData.getColumnCount();
             DefaultTableModel tableModel = (DefaultTableModel) readersTable.getModel();
             tableModel.setRowCount(0);
             while(result.next()){
@@ -286,6 +346,31 @@ public class ReaderWindow {
         }
     }
 
+    public void loadBorrowedBooksData(){
+        String readerId = Objects.requireNonNull(textId.getSelectedItem()).toString();
+        try {
+            preparedStatment = connection.prepareStatement("SELECT r.id AS id, b.title, b.author, rd.surname, rd.pesel, r.date, r.deadline, CASE WHEN CURRENT_DATE > r.deadline THEN (CURRENT_DATE - r.deadline) * 5 ELSE 0 END AS penalty FROM rentals r JOIN books b ON r.bookId = b.id JOIN readers rd ON r.readerId = rd.id WHERE r.readerId = ? ORDER BY r.id");
+            preparedStatment.setString(1, readerId);
+            result = preparedStatment.executeQuery();
+            DefaultTableModel tableModel = (DefaultTableModel) borrowedBooksTable.getModel();
+            tableModel.setRowCount(0);
+            while(result.next()){
+                Vector<String> v2 = new Vector<>();
+                v2.add(result.getString("id"));
+                v2.add(result.getString("title"));
+                v2.add(result.getString("author"));
+                v2.add(result.getString("surname"));
+                v2.add(result.getString("pesel"));
+                v2.add(result.getString("deadline"));
+                v2.add(result.getString("penalty"));
+                tableModel.addRow(v2);
+            }
+        } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(null, "Cannot delete reader if rentals is not zero!");
+            throw new RuntimeException(ex);
+        }
+    }
+
     // SHOW APP WINDOW
     public void showWindow(){
         JFrame frame = new JFrame("readerFrame");
@@ -300,4 +385,6 @@ public class ReaderWindow {
         ReaderWindow window = new ReaderWindow();
         window.showWindow();
     }
+
 }
+

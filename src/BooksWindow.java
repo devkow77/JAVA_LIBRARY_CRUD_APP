@@ -26,6 +26,7 @@ public class BooksWindow {
     private JButton borrowButton;
     private JButton addReaderButton;
     private JButton backToMenuButton;
+    private JButton rentalsManagerButton;
 
     Connection connection;
     PreparedStatement preparedStatment;
@@ -171,7 +172,7 @@ public class BooksWindow {
         exportToCSVButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                String filename = "C:/Users/kacpe/IdeaProjects/Library/data_exported.csv";
+                String filename = "C:/Users/kacpe/IdeaProjects/Library/books_data_exported.csv";
                 try {
                     FileWriter fw = new FileWriter(filename);
                     preparedStatment = connection.prepareStatement("SELECT * FROM books");
@@ -199,7 +200,8 @@ public class BooksWindow {
         borrowButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-
+                BorrowBookWindow window = new BorrowBookWindow();
+                window.showWindow();
             }
         });
 
@@ -208,6 +210,15 @@ public class BooksWindow {
             @Override
             public void actionPerformed(ActionEvent e) {
                 ReaderWindow window = new ReaderWindow();
+                window.showWindow();
+            }
+        });
+
+        // OPEN RENTALS WINDOW
+        rentalsManagerButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                RentalsWindow window = new RentalsWindow();
                 window.showWindow();
             }
         });
@@ -262,11 +273,8 @@ public class BooksWindow {
     // FETCH ALL DATA FROM BOOKS
     public void loadData(){
         try{
-            int quantity;
             preparedStatment = connection.prepareStatement("SELECT books.id, title, author, publishedAt, quantity, COUNT(rentals.bookId) AS borrowed, IF(COUNT(rentals.bookId) < quantity, 'true', 'false') AS available FROM books LEFT JOIN rentals ON books.id = rentals.bookId GROUP BY books.id, title, author, publishedAt, quantity");
             result = preparedStatment.executeQuery();
-            ResultSetMetaData resultSetData = result.getMetaData();
-            quantity = resultSetData.getColumnCount();
             DefaultTableModel tableModel = (DefaultTableModel) booksTable.getModel();
             tableModel.setRowCount(0);
             while(result.next()){
@@ -280,7 +288,6 @@ public class BooksWindow {
                 v2.add(result.getString("available"));
                 tableModel.addRow(v2);
             }
-
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
