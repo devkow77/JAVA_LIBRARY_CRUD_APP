@@ -219,13 +219,6 @@ public class ReaderWindow {
             }
         });
 
-        backToMenuButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                MenuWindow window = new MenuWindow();
-                window.showWindow();
-            }
-        });
 
         // OPEN BOOKS MANAGER
         openBooksManagerButton.addActionListener(new ActionListener() {
@@ -258,14 +251,6 @@ public class ReaderWindow {
             @Override
             public void actionPerformed(ActionEvent e) {
                 MenuWindow window = new MenuWindow();
-                window.showWindow();
-            }
-        });
-
-        openBorrowBookButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                BorrowBookWindow window = new BorrowBookWindow();
                 window.showWindow();
             }
         });
@@ -380,11 +365,5 @@ public class ReaderWindow {
         frame.pack();
         frame.setVisible(true);
     }
-
-    public static void main(String[] args) {
-        ReaderWindow window = new ReaderWindow();
-        window.showWindow();
-    }
-
 }
 

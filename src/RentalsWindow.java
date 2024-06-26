@@ -165,9 +165,4 @@ public class RentalsWindow {
         frame.pack();
         frame.setVisible(true);
     }
-
-    public static void main(String[] args) {
-        RentalsWindow window = new RentalsWindow();
-        window.showWindow();
-    }
 }

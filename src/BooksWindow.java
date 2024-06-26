@@ -302,9 +302,4 @@ public class BooksWindow {
         frame.pack();
         frame.setVisible(true);
     }
-
-    public static void main(String[] args) {
-        BooksWindow window = new BooksWindow();
-        window.showWindow();
-    }
 }

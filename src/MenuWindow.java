@@ -35,8 +35,8 @@ public class MenuWindow {
         readersButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-//                ReaderWindow window = new ReaderWindow();
-//                window.showWindow();
+                ReaderWindow window = new ReaderWindow();
+                window.showWindow();
             }
         });
 
@@ -75,10 +75,5 @@ public class MenuWindow {
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.pack();
         frame.setVisible(true);
-    }
-
-    public static void main(String[] args) {
-        MenuWindow window = new MenuWindow();
-        window.showWindow();
     }
 }
